@@ -1,0 +1,303 @@
+service: ${self:custom.secrets.SERVICE}
+
+# Create an optimized package for our functions
+package:
+  individually: true
+
+plugins:
+  - serverless-webpack
+  # - serverless-bundle # Package our functions with Webpack
+  - serverless-offline
+  # - serverless-dotenv-plugin # Load .env as environment variables
+
+custom:
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+  # bundle:
+  #   copyFiles:
+  #     - from: "node_modules/chrome-aws-lambda/bin/*"
+  #       to: "node_modules/chrome-aws-lambda/bin/"
+  serverless-offline:
+    noPrependStageInUrl: true
+    resourceRoutes: true
+  DB_NAME: ${self:custom.secrets.DB_NAME}
+  USERNAME: ${self:custom.secrets.USERNAME}
+  PASSWORD: ${self:custom.secrets.PASSWORD}
+  EMAIL: ${self:custom.secrets.EMAIL}
+  USER_POOL: ${self:custom.secrets.USER_POOL}
+  NODE_ENV: ${self:custom.secrets.NODE_ENV}
+  SITE_URL: ${self:custom.secrets.SITE_URL}
+  # GENERATOR_KEY: ${self:custom.secrets.GENERATOR_KEY}
+  # ENCRYPTION_KEY: ${self:custom.secrets.ENCRYPTION_KEY}
+  POSTGRESQL:
+    HOST:
+      Fn::GetAtt: [POSTGRESQL_HOST, Endpoint.Address]
+    PORT:
+      Fn::GetAtt: [POSTGRESQL_PORT, Endpoint.Port]
+  secrets: ${file(secrets.json)}
+
+provider:
+  name: aws
+  logs:
+    restApi: true
+  runtime: nodejs16.x
+  stage: ${self:custom.secrets.NODE_ENV}
+  region: us-east-2
+  timeout: 600
+  vpc:
+    securityGroupIds:
+      - sg-0990cd452816e7f67
+    subnetIds:
+      - subnet-0499acfa723bef3fc #public
+      - subnet-02003e9ffe3699133 #private
+      - subnet-072d687b1353754ef #private
+  environment:
+    NODE_ENV: ${self:custom.secrets.NODE_ENV}
+    #postgresql
+    POSTGRESQL_HOST: ${self:custom.secrets.HOST}
+    POSTGRESQL_PORT: ${self:custom.secrets.PORT}
+    DB_NAME: ${self:custom.secrets.DB_NAME}
+    USERNAME: ${self:custom.secrets.USERNAME}
+    EMAIL: ${self:custom.secrets.EMAIL}
+    PASSWORD: ${self:custom.secrets.PASSWORD}
+    USER_POOL: ${self:custom.secrets.USER_POOL}
+    SITE_URL: ${self:custom.secrets.SITE_URL}
+    # GENERATOR_KEY: ${self:custom.secrets.GENERATOR_KEY}
+    # ENCRYPTION_KEY: ${self:custom.secrets.ENCRYPTION_KEY}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "cognito-idp:AdminCreateUser"
+        - "cognito-idp:ListUsers"
+      Resource: "*"
+    - Effect: "Allow"
+      Action:
+        - "ses:SendEmail"
+      Resource: "*"
+    - Effect: "Allow"
+      Action:
+        - "kms:GenerateDataKey"
+        - "kms:GenerateDataKeyWithoutPlaintext"
+        - "kms:CreateAlias"
+        - "kms:CreateKey"
+        - "kms:Decrypt"
+        - "kms:Encrypt"
+        - "kms:EnableKey"
+        - "kms:UpdateAlias"
+      Resource: "*"
+
+functions:
+  # ADMIN
+  addProviderOrg:
+    handler: src/AddProvider/addProviderOrg.handler
+    events:
+      - http:
+          path: /addproviderorg
+          method: post
+          cors: true
+
+  checkUserExists:
+    handler: src/AddProvider/checkUserExists.handler
+    events:
+      - http:
+          path: /checkuserexists
+          method: post
+          cors: true
+
+  getProviderOrg:
+    handler: src/getProviderOrg.handler
+    events:
+      - http:
+          path: /getproviderorg
+          method: post
+          cors: true
+
+  ####################################****LOGIN PAGE*****###################################
+
+  getUserProvider:
+    handler: src/Login/getUserProvider.handler
+    events:
+      - http:
+          path: /getuserprovider
+          method: post
+          cors: true
+
+  resetTempPassword:
+    handler: src/Login/resetTempPassword.handler
+    events:
+      - http:
+          path: /resettemppassword
+          method: post
+          cors: true
+
+  sendWelcomeEmail:
+    handler: src/Login/sendWelcomeEmail.handler
+    events:
+      - http:
+          path: /sendwelcomeemail
+          method: post
+          cors: true
+
+  ####################################****SERVICE PROVIDERS PAGE*****###################################
+  getAllProviders:
+    handler: src/ServiceProviders/getAllProviders.handler
+    events:
+      - http:
+          path: /getallproviders
+          method: get
+          cors: 
+            origins: 
+              - hhtp://localhost:3000/getallproviders
+    tracing: true
+
+  addProviderSearch:
+    handler: src/ServiceProviders/addProviderSearch.handler
+    events:
+      - http:
+          path: /addprovidersearch
+          method: post
+          cors: true
+
+  getProvidersSavedSearches:
+    handler: src/ServiceProviders/getProvidersSavedSearches.handler
+    events:
+      - http:
+          path: /getproviderssavedsearches
+          method: post
+          cors: true
+
+  getParticipantId:
+    handler: src/ServiceProviders/getParticipantId.handler
+    events:
+      - http:
+          path: /getparticipantid
+          method: post
+          cors: true
+
+  ###################################*********PEOPLE PAGE****###################################
+  addProviderPeopleNotes:
+    handler: src/People/addProviderPeopleNotes.handler
+    events:
+      - http:
+          path: /addproviderpeoplenotes
+          method: post
+          cors: true
+  # getparticipantsavedsearches
+
+  # getAuthorizedParticipantData:
+  #   handler: src/People/getAuthorizedParticipantData.handler
+  #   events:
+  #     - http:
+  #         path: /getauthorizedparticipantdata
+  #         method: post
+  #         cors: true
+
+  getIntakes:
+    handler: src/People/getIntakes.handler
+    events:
+      - http:
+          path: /getintakes
+          method: post
+          cors: true
+
+  getClients:
+    handler: src/People/getClients.handler
+    events:
+      - http:
+          path: /getclients
+          method: post
+          cors: true
+
+  getParticipantSavedSearches:
+    handler: src/People/getParticipantSavedSearches.handler
+    events:
+      - http:
+          path: /getparticipantsavedsearches
+          method: post
+          cors: true
+
+  getPeopleDrawerNotification:
+    handler: src/LeftDrawer/getPeopleDrawerNotification.handler
+    events:
+      - http:
+          path: /getpeopledrawernotification
+          method: post
+          cors: true
+
+  getColors:
+    handler: src/LeftDrawer/getColors.handler
+    events:
+      - http:
+          path: /getcolors
+          method: post
+          cors: true
+
+  ###################################*********OUR PROFILE PAGE****###################################
+
+  # When the user logs in, this function gets the provider name that the user is associated with
+
+  addProviderProfileBasics:
+    handler: src/OurProfile/addProviderProfileBasics.handler
+    events:
+      - http:
+          path: /addproviderprofilebasics
+          method: post
+          cors: true
+          # authorizer: aws_iam
+
+  addProviderProfileDetails:
+    handler: src/OurProfile/addProviderProfileDetails.handler
+    events:
+      - http:
+          path: /addproviderprofiledetails
+          method: post
+          cors: true
+
+  addProviderProfileNonpublic:
+    handler: src/OurProfile/addProviderProfileNonpublic.handler
+    events:
+      - http:
+          path: /addproviderprofilenonpublic
+          method: post
+          cors: true
+
+  getProviderProfileData:
+    handler: src/OurProfile/getProviderProfileData.handler
+    events:
+      - http:
+          path: /getproviderprofiledata
+          method: post
+          cors: true
+          # authorizer: aws_iam
+
+    ###################################*********SETTINGS PAGE****###################################
+
+  updateProviderUsername:
+    handler: src/Settings/updateProviderUsername.handler
+    events:
+      - http:
+          path: /updateproviderusername
+          method: post
+          cors: true
+
+  updateProviderProfile:
+    handler: src/Settings/updateProviderProfile.handler
+    events:
+      - http:
+          path: /updateproviderprofile
+          method: post
+          cors: true
+
+    ###################################*********HELPFORM PAGE****###################################
+  addHelpform:
+    handler: src/Helpform/addHelpform.handler
+    events:
+      - http:
+          path: /addhelpform
+          method: post
+          cors: true
+
+resources:
+  - ${file(resources/cognito-user-pool.yml)}
+  - ${file(resources/cognito-identity-pool.yml)}

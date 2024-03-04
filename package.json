@@ -1,0 +1,22 @@
+{
+  "name": "backend_provider_mvp1",
+  "version": "2.2.0",
+  "description": "The backend resources for Referall Provider Web App",
+  "main": "handler.js",
+  "scripts": {
+    "test": "serverless-bundle test"
+  },
+  "author": "Referall",
+  "devDependencies": {
+    "serverless-bundle": "^3.2.0",
+    "serverless-dotenv-plugin": "^2.1.1",
+    "serverless-offline": "^5.12.1",
+    "serverless-webpack": "^5.13.0"
+  },
+  "dependencies": {
+    "@aws-crypto/client-node": "^3.1.1",
+    "@aws-sdk/client-s3": "^3.32.0",
+    "aws-sdk": "^2.865.0",
+    "pg": "^8.5.1"
+  }
+}
